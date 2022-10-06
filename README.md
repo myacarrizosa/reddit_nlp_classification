@@ -78,7 +78,8 @@ We then performed a train-test-split on the text with words removed and fit this
 To visualize the performance of our models, we created confusion matrix plots that displayed the counts of true positives, true negatives, false positives, and false negatives. These visualizations helped us see which models were peforming best, as well as see what types of posts some models were struggling at classifying (for example, the random forests model did well classifying AskPhilosophy posts correctly but struggled at classifying Religion posts, which can be clearly seen in the confusion matrix). 
 
 
-![CM]('./visualizations/rfcm.jpg')
+<img src='project-3/visualizations/rfcm.png'>
+
 
 We also looked at instances where the model misclassified submissions to hypothesize why these posts were difficult for our model to classify.  
 
