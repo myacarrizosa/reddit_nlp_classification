@@ -1,94 +1,89 @@
 # Executive Summary 
 ## Problem Statement
-Reddit is social media platform that   . There is 
+Reddit is a social media platform that consists of pages dedicated to specific topics, called subreddits, where users can post and comment within the guidelines of that page and topic. Two of these subreddits are the r/Religion page, and the r/AskPhilosophy page. We are a sociology research group who has theorized that the thematic elements of religious discussions and philosophical discussions are very similar; we anecdotally see overlap in areas like ethics, morality, meaning, human nature, and more. Because of these thematic similarities, we are interested in seeing if a machine learning model could predict whether a submission was taken from the Religion or AskPhilosophy subreddit. 
 
 
 ## Description of Data
-The data used in this project is text data consisting of Reddit submissions (title and text) posted on the r/AskPhilosophy and r/Religion subreddits. 
+The data used in this project is text data consisting of Reddit submissions (title and text) posted on the r/AskPhilosophy and r/Religion subreddits. The AskPhilosophy subreddit was chosen instead of the Philosophy subreddit because the Philosophy subreddit mainly consisted of links to external pages and videos, which wouldn't provide the text data needed to compare and classify the pages. After data cleaning, there were 4945 data records.
 
 ## Data Dictionary
 
 |Feature|Type|Dataset|Description|
 |---|---|---|---|
-|MS Zoning|object|selected_data| Identifies the general zoning classification of the sale. Dummy variables were created for each possible value of MS Zoning and coded 1 in the column that corresponded to the value of the data record| 
-|Utilities|object|selected_data| The type of utilities available. Dummy variables were created for each possible value of Utilities and coded 1 in the column that corresponded to the value of the data record| | 
-|Neighborhood|object|selected_data|Physical location within the Ames city limits. Dummy variables were created for each possible value of Neighborhood and coded 1 in the column that corresponded to the value of the data record| | 
-|House Style|object|selected_data| Style of dwelling. Dummy variables were created for each possible value of House Style and coded 1 in the column that corresponded to the value of the data record|
-|Overall Qual|integer|selected_data|Rating of the overall material and finish of the house from 1 to 10|
-|Overall Cond|integer|selected_data|Rating of the overall condition of the house from 1 to 10|
-|Year Built|integer|selected_data|The original construction date of the house|
-|Heating QC|object|selected_data|Heating quality and condition, rated either Excellent, Good, Average, Fair, or Poor. Dummy variables were created for each possible value of Heating QC and coded 1 in the column that corresponded to the value of the data record|
-|Central Air|object|selected_data| Whether the house has central air conditioning, either yes or no. Dummy variables were created for each possible value of Central Air and coded 1 in the column that corresponded to the value of the data record|
-|TotRms AbvGrd|integer|selected_data|Total rooms above grade|
-|Functional|object|selected_data|Home functionality, rated either Typical, Minor Deductions 1, Minor Deductions 2, Moderate Deductions, Major Deductions 1, Major Deductions 2, Severely Damaged, or Salvage Only. Dummy variables were created for each possible value of Functional and coded 1 in the column that corresponded to the value of the data record|
-|Garage Cars|integer|selected_data|Size of garage in car capacity|
-|Fireplaces|integer|selected_data|Number of fireplaces|
-|1st Flr SF|integer|selected_data|First floor square feet|
-|2nd Flr SF|integer|selected_data|Second floor square feet|
-|Full Bath|integer|selected_data|Number of full bathrooms above grade|
-|Half Bath|integer|selected_data|Number of half bathrooms above grade|
+|subreddit|integer|all_posts| Identifies the subreddit that submission was posted on. AskPhilosophy is coded as 0 and Religion is coded as 1.| 
+|title|object|all_posts| The title text from a submission.|
+|selftext|object|all_posts| The body text from a submission.| 
+|all_text|object|all_posts| The title and body text from a submission.| 
+|text_no_rp|object|all_posts| The title and body text from a submission with the words religion and philosophy removed.|
+|status_length|integer|all_posts| The number of characters in a submission's body text.| 
+|status_word_count|integer|all_posts| The number of words in a submission's body text.| 
+|title_len|integer|all_posts| The number of characters in a submission's title.| 
+|title_word_count|integer|all_posts| The number of words in a submission's title.|  
 
-Feature information sourced from Ames, Iowa Assessor's Office
+## Data Collection
+Data was pulled from the r/AskPhilosophy and r/Religion subreddits using Pushshift's API. 
+
 ## Analysis
 #### Exploratory Data Analysis
-A few operations were performed as an intial exploration of the data to look for trends and potential areas of interest. 
+A few operations were performed as an intial exploration of the subreddit data. 
 
-First, we selected a narrowed down list of variables that we thought might have an influence on sale price. This list was comprised of With this smaller set of variables, we checked for null values, which we then filled with the most frequent value in the column. We then created histograms to look at the distribution of values for all the categorical variables (MS Zoning, Utilites, Neighborhoopd, House Style, Heating QC, Central Air, and Functional). For the numerical data, we created box plots to look at the spread and identify outliers. Every numerical variable except for Half Baths had some outliers, but when examining the outliers further and contextualizing them with the information on the variables, none of them seemed to be due to error. Because of this, we left them in for most of our models.
+First, we created variables for status length, status word count, title length, and title word count. We then created distibutions of the status word count for posts from the philosophy and religion subreddits respectively to visualize and compare the spread of status word count for each subreddit. They both were right-skewed and had a clear mode of zero. We also created distibutions of the title word count for posts from the philosophy and religion subreddits respectively to compare the spread of title word count for each subreddit. They both were right-skewed, but the philosophy subreddit had a larger range of title word counts. 
 
-We then created dummy variables for each of our categorical variables so that they could be included in linear regression. For each dummy variable, one of the categories was set as the baseline.
+Next, we ran our text data through a CountVectorizer transformer so that the frequency of words could be examined. After transforming the data, we found the 10 most common words for each subreddit to compare to one another. There was some overlap in these words, with words like 'just', 'people', 'know', and 'think' being found in the top ten words in both subreddits. 
 
-MS Zoning Baseline: Agriculture  
-Utilities Baseline: All Pub  
-Neighborhood Baseline: Blmngtn  
-House Style Baseline: 1.5 Fin  
-Heating QC Baseline: Ex  
-Central Air Baseline: No  
-Functional Baseline: Maj1  
+## Classification Modeling 
+We fit four different types of models to find which model best performed at classifying which subreddit our reddit posts came from. 
 
-Next, we checked for multicollinerity by finding correlations between variables we thought might be related. We found a correlation of 0.81 between the variable for 2nd Floor House Style and 2nd floor square feet, indicating multicollinearity. To address this, we made an interaction term of the two by adding them together to be used in place of the two variables in our model. We also made an interaction term between Overall Quality and Overall Condition by multiplying those two variables together, to see if the combination of the two influences sale price. Finally, we made an interaction term by adding first and second floor square feet to see if the total square feet above ground has an influence on sale price. 
+Prior to fitting our models, we split our data into a training set and a test set so that we would be able to see how well our model performs on new data after fitting on the training data. 
 
-We then created scatterplots of the correlations between some of our X variables and sale price to get an initial idea of which variables might be more highly influencing sale price. We found positive relations between sale price and variables like 1st and 2nd floor square feet, suggesting that these variables would be instrumental in the models we fit to predict sale price. 
+Next, we created a null model by identifying the majority class in our data. For any given submission, the null model would classify the submission as being from the AskPhilosophy subreddit, since it was the majority class. This model has an accuracy score of 0.57.
 
-### Linear Modeling 
-We fit several different models using different combinations of selected variables to find which combination of variables explained the highest percent of the variability in sale price. 
+Although we already transformed our text data using CountVectorizer for our EDA, we wanted to be able to gridsearch over the best hyperparameters for CountVectorizer, so for each model we re-fed the data through a pipeline including CountVectorizer. 
 
-Prior to fitting our models, we split our data into a training set and a verification set so that we would be able to see how well our model performs on new data after fitting using the training data. We then standardized the X-variables to ensure that the large ranges in scale (for example, square feet measured in the thousands and number of rooms measured in ones) weren't creating issues when fitting our models. 
+#### Logistic Regression 
+For our logistic regression, we built a pipeline with CountVectorizer and Logistic Regression so we could gridsearch for the best hyperparameters. We used GridSeach to check whether CountVectorizer stop words should be none or english, whether CountVectorizer ngram_range should be only single words or single words and word pairs, and whether CountVectorizer max_df should be 0.9 or 1.0. We also GridSearched over Logistic Regression to check whether logreg_solver should be lbfgs or liblinear. The GridSearch returns the combination hyperparameters that built the best performing model. The Logistic Regression best parameters were: 'cvec__max_df': 0.9,
+ 'cvec__ngram_range': (1, 1),'cvec__stop_words': 'english',
+ 'logreg__solver': 'liblinear'. 
+ 
+We then fit this model on our X_train data. This model had an accuracy score of 0.98 on the train data and 0.89 on the test data. On test data, the model sensitivity was 0.91, the model specificity was 0.90, and the model precision was 0.87. This was a pretty well performing model, with slight evidence of overfitting, seen by the decrease in performance from train data to test data. 
 
-Next, we created a null model by taking the mean of sale price. For any given inputs, the null model will return the average price. This allows us to compare our models to a baseline to see if they are performing better than if we just guessed using the average price. 
 
-For our first linear regression, we fit a model using all of the variables we selected for our narrowed down Selected Variables dataset from the larger housing dataset. It was likely that this model would be overfit and not be the best choice to predict sale price. The model had a coefficient of determination of 0.842 on the validation data, meaning that 84.2% of the variation in sale price could be explained by our X variables.
+#### K Nearest Neighbors Classifier
+For our K Nearest Neighbors Classifier, we built a pipeline with CountVectorizer, StandardScaler and KNeighborsClassifier so we could gridsearch for the best hyperparameters. StandardScaler was included in this pipeline because it is necessary to scale data before using KNN models. We used GridSeach to check whether CountVectorizer stop words should be none or english, whether CountVectorizer ngram_range should be only single words or single words and word pairs, and whether CountVectorizer max_df should be 0.9 or 1.0. We did not test any hyperparameters for StandardScaler in GridSearch, but we set with_mean = False. We also GridSearched over KNeighborsClassifier to check whether n_neighbors should be 3, 5, or 7, whether weights should be uniform or distance, and whether metric should be minkowski, euclidian, or manhattan. The GridSearch returns the combination hyperparameters that built the best performing model. The KNN best parameters were: 'cvec__max_df': 0.9, 'cvec__ngram_range': (1, 1), 'cvec__stop_words': 'english', 'knn__metric': 'minkowski', 'knn__n_neighbors': 3, 'knn__weights': 'distance'.
+ 
+We then fit this model on our X_train data. This model had an accuracy score of 0.9997 on the train data and 0.56 on the test data. This model was severely overfit. On test data, the model sensitivity was 0.93, the model specificity was 0.29, and the model precision was 0.50. This model had difficulty classifying AskPhilosophy posts, labeling them as Religion, as shown by the very low specificity score. 
 
-Next we fit a model (referred to as Model 2) that dropped the variables that were possibly multicollinear, 2nd floor square feet and 2nd floor house style. This model had a coefficient of determination of 0.842 on the validation data, meaning that 84.2% of the variation in sale price can be explained by our X variables. This was the same as the all variable model, but had the advantage of not including multicollinear variables. 
+ 
 
-We fit four more variations of our models, dropping variables like heating quality and condition, MS zoning, fireplaces, and functionality ratings. None of these model performed as well as Model 2.
+#### Random Forests Decision Trees
+For our Random Forests Decision Trees Classifier, we built a pipeline with CountVectorizer and Random Forest Classifier so we could gridsearch for the best hyperparameters. We used GridSeach to check whether CountVectorizer stop words should be none or english, whether CountVectorizer ngram_range should be only single words or single words and word pairs, and whether CountVectorizer max_df should be 0.9 or 1.0. We also GridSearched over Random Forest Classifier to check whether n_estimators should be 100, 125, or 150, whether max depth of branches should be 3, 5, or 8, and whether the minimum samples for a leaf should be 1, 2, or 5. The GridSearch returns the combination hyperparameters that built the best performing model. The Random Forest best parameters were: 'cvec__max_df': 0.9, 'cvec__ngram_range': (1, 1), 'cvec__stop_words': None, 'rf__max_depth': 8, 'rf__min_samples_leaf': 1, 'rf__n_estimators': 150. 
+ 
+We then fit this model on our X_train data. This model had an accuracy score of 0.75 on the train data and 0.73 on the test data. On test data, the model sensitivity was 0.40, the model specificity was 0.99, and the model precision was 0.96. This model had difficulty classifying Religion posts, frequently labeling them as AskPhilosophy, as shown by the very low sensitivity score. 
 
-We noticed in all of the scatterplots of the relation between our actual sale prices and predicted sale prices that the plots seemed to fan out. We then decided to remove outliers from the variables Total Rooms Above Grade and 1st Floor Square Feet to see if this resulted in a more linear relationship. We chose these variables because in our box plots constructed in our early data analysis, these two variables had the most amount of outliers. We then fit a model with the same variables as Model 2, using the data with outliers removed. This model saw an increase in the coefficient of determination for the data it was trained on, but did not see improvement when tested on validation data, stay around 0.84. Removing the outliers did not seem to help fit a model with stronger predictive ability. 
+#### AdaBoosted Decision Trees
+For our AdaBoost Classifier, we built a pipeline with CountVectorizer and AdaBoost Classifier so we could gridsearch for the best hyperparameters. We used GridSeach to check whether CountVectorizer stop words should be none or english, whether CountVectorizer ngram_range should be only single words or single words and word pairs, and whether CountVectorizer max_df should be 0.9 or 1.0. We also GridSearched over AdaBoost Classifier to check whether n_estimators should be 100, 125, or 150, and whether the learning rate that weights incorrect classifications each iteration of the model should be 1.0 or 1.5. The GridSearch returns the combination hyperparameters that built the best performing model. The AdaBoost best parameters were: 'cvec__max_df': 0.9, 'cvec__ngram_range': (1, 1), 'cvec__stop_words': None, 'ada__learning_rate': 1.0, 'ada__n_estimators': 150. 
 
-We noticed that there was a slight curve in the data in all of our scatterplots of the relation between actual and predicted sale price. We thought this could be addressed by constructing a model for the log of sale price, instead of sale price. This model had a coefficient of determination of 0.876 on the validation data, meaning that 87.6% of the variation in sale price could be explained by our X variables. This was the biggest improvement yet in our models. The scatterplot of the relation between predicted log sale price and actual log sale price was more linear than the scatterplots of the other models. A drawback of using this model is that other metrics, like the root mean square error, cannot be easily compared to previous models due to their difference in scale of the residuals. Additionally, when using this model, the output will need to be transformed back into sale price. This model remained our best performing model. 
+    
+We then fit this model on our X_train data. This model had an accuracy score of 0.91 on the train data and 0.87 on the test data. On test data, the model sensitivity was 0.89, the model specificity was 0.89, and the model precision was 0.86. This model performed almost as well as the Logistic Regression model and had less variance. 
 
-Because several of our earlier models were all performing similarly, we wanted to see if we could find a simplified model that still maintained roughly the same performance as our earlier models. We decided to shoot for a coefficient of determination of around 0.84, while parsing down our model as much as possible. The simplest model we came up with had a coefficient of determination of 0.839 while only needing information on overall quality and condition of the house, total rooms above grade, first and second floor square feet, number of half and full baths, and neighborhood. 
+#### Logistic Regression on Data With No Subreddit Names 
 
-#### Regularizations
+We decided to see if our model could still perform well at predicting subreddit classification if the submission did not contain the words 'religion' or 'philosophy', as these words likely were pretty strong indicators of what subreddit a submission came from. We created a new column of the combined title and body text of a submission with the words 'religion' and 'philosophy' removed. We then created a pipeline of CountVectorizer and Logistic Regression and set the hyperparameters equal to the best parameters that GridSearch identified in our previous Logistic Regression model ('cvec__max_df': 0.9, 'cvec__ngram_range': (1, 1), 'cvec__stop_words': 'english', 'logreg__solver': 'liblinear'). 
 
-Because our best model, the log of sale price, consisted of so many x variables, we wanted to see if regularizing the model had any impact on its performance. We used both ridge regularization and lasso regularization on the model. We tested a variety of values for our hyperparameter alpha, and found that for ridge regularization the best value for alpha was 70.55, and for lasso regularization the best value for alpha was 0.0023. Both methods of regularization resulted in virtually identicial train and validation coeffients of determinations, meaning there was very little if any error due to variation. However, there was not improvement in R^2 compared to the non-regularized log model; the performance of the two models were both an R^2 value of 0.87. Because error due to variation was not really a concern with the non-regularized model, we decided it wasn't necessary to use the regularized model.
-
-We then used ridge regularization on our Model 2 with the outliers removed. This model had the greatest decrease in coefficient of determination from train data to validation data, indicating potential error due to variance. We wanted to see if regularizing would improve model fit. We tested a variety of values for our hyperparameter alpha and found that 10.72 was the best value for alpha. After regularizing, the difference in train and validation R^2 only decreased by 0.003, so the regularization did not have much of an impact. 
-
-After testing many models, our best performing model was our model predicting the log of sale price, with an R^2 of 0.876. Our simiplest model that still performed comparably to the majority of other models was our model that took the following X variables: overall quality and condition of the house, total rooms above grade, first and second floor square feet, number of half and full baths, and neighborhood. This model had an R^2 of 0.839. 
+We then performed a train-test-split on the text with words removed and fit this model on our X_train data. This model had an accuracy score of 0.99 on the train data and 0.90 on the test data. On test data, the model sensitivity was 0.90, the model specificity was 0.89, and the model precision was 0.85. This model performed as well as the Logistic Regression model with 'religion' and 'philosophy' left in, showing that our model was still able to classify submissions based on other features besides direct references in the text to the subreddits. 
 
 
 
 #### Data Visualizations 
-To visualize the fit of our models, we created scatterplots of the relation between the sale prices our model predicted and the actual sale price of the property using the validation data we set aside to test our trained models on. These scatterplots allowed us to detect the curved pattern in these residuals in our original models, which indicated that we might need to take the log of sale price. The scatterplot of the model with the log of sale price shows a more linear relation between predicted and actual price, which is a reflection of the higher R^2 and better predictions of the model. 
+To visualize the performance of our models, we created confusion matrix plots that displayed the counts of true positives, true negatives, false positives, and false negatives. These visualizations helped us see which models were peforming best, as well as see what types of posts some models were struggling at classifying (for example, the random forests model did well classifying AskPhilosophy posts correctly but struggled at classifying Religion posts, which can be clearly seen in the confusion matrix). 
 
 
+![CM]('./visualizations/rfcm.jpg')
 
-## Conclusions and Reccomendations 
+We also looked at instances where the model misclassified submissions to hypothesize why these posts were difficult for our model to classify.  
 
-Our models to predict sale price were able to explain a range of 82-87% of the variation in sale price given the x variables. Depending on the goals and resources of the user, we recommend one of two models. 
+## Conclusions and Recommendations 
 
-If you have the ability to collect extensive information on a property, we recommend using the model that predicts the log of the sale price. The variables in that model explain 87% of the variation in the log in sale price. The prediction of the log of sale price can be easily transformed back to sale price by raising e to the power of the predicted value. This model is most likely to generate predictions close to the true sale price of a property. 
+By analyzing text data from the Religion and AskPhilosophy subreddits using natural language processing and classification models, a machine learning model can predict which subreddit the text data came from with high accuracy. Our logistic regression model was able to classify submisssions with 89% accuracy, a sensitivity of 0.91, a specificity of 0.90, and a precision of 0.87. 
 
-If you are trying to predict sale price but don't have the resources or access to collect information on an exhaustive list of features, we recommend using the simple model we fit. With just information on the overall quality and condition, total rooms above grade, first and second floor square feet, number of half and full baths, and neighborhood, this model can explain 84% of the variance in sale price. This model is a good choice if you want to save time and money collecting data on the house while still getting a comparable sale price prediction. 
-
-These models were designed for prediction, not necessarily inference. Although multicollinearity was checked for in variables that seemed related and addressed when found, a thorough check of every variable correlated with the others was not conducted, and some instances of multicollinearity may have been missed.
+Even without key words like 'religion' and 'philosophy', the model is able to pick up on differences in the way that 
